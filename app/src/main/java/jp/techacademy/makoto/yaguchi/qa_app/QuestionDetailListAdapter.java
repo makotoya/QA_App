@@ -7,13 +7,20 @@ package jp.techacademy.makoto.yaguchi.qa_app;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class QuestionDetailListAdapter extends BaseAdapter {
     private final static int TYPE_QUESTION = 0;
@@ -21,6 +28,10 @@ public class QuestionDetailListAdapter extends BaseAdapter {
 
     private LayoutInflater mLayoutInflater = null;
     private Question mQustion;
+
+    private DatabaseReference mDatabaseReference;
+    private DatabaseReference mFavouriteRef;
+
 
     public QuestionDetailListAdapter(Context context, Question question) {
         mLayoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -58,7 +69,6 @@ public class QuestionDetailListAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-
         if (getItemViewType(position) == TYPE_QUESTION) {
             if (convertView == null) {
                 convertView = mLayoutInflater.inflate(R.layout.list_question_detail, parent, false);
@@ -71,9 +81,52 @@ public class QuestionDetailListAdapter extends BaseAdapter {
 
             TextView nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
             nameTextView.setText(name);
+
+            //お気に入りボタンの追加
+            Button favouriteButton = (Button) convertView.findViewById(R.id.favouriteButton);
+            Button unFavouriteButton = (Button) convertView.findViewById(R.id.unFavouriteButton);
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+            String favourite = mQustion.getFavourite();
+
+            mDatabaseReference = FirebaseDatabase.getInstance().getReference();
+            mFavouriteRef = mDatabaseReference.child(Const.ContentsPATH).child(String.valueOf(mQustion.getGenre())).child(mQustion.getQuestionUid()).child("favourite");
             /*
-            ImageButton favouriteButton = (ImageButton) convertView.findViewById(R.id.fButton);
+            mFavouriteRef.addChildEventListener(mEventListener);
             */
+
+            //ログイン状態によるボタン表示の切り替え
+            if (user == null) {
+                favouriteButton.setVisibility(View.INVISIBLE);
+                unFavouriteButton.setVisibility(View.INVISIBLE);
+            } else if (favourite.equals("0")) {
+                favouriteButton.setVisibility(View.INVISIBLE);
+                unFavouriteButton.setVisibility(View.VISIBLE);
+            } else {
+                unFavouriteButton.setVisibility(View.INVISIBLE);
+            }
+
+            favouriteButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mQustion.setFavourite("0");
+                    String key = mQustion.getQuestionUid();
+                    String favourite = mQustion.getFavourite();
+                    Log.d("nakami", favourite);
+                    Log.d("nakami", key);
+                }
+            });
+
+            unFavouriteButton.setOnClickListener((new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mQustion.setFavourite("1");
+                    String favourite = mQustion.getFavourite();
+                    Log.d("nakami", favourite);
+                }
+            }));
+
+
             byte[] bytes = mQustion.getImageBytes();
             if (bytes.length != 0) {
                 Bitmap image = BitmapFactory.decodeByteArray(bytes, 0, bytes.length).copy(Bitmap.Config.ARGB_8888, true);
