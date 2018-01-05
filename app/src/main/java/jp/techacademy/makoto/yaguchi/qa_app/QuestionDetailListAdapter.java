@@ -7,13 +7,11 @@ package jp.techacademy.makoto.yaguchi.qa_app;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -21,6 +19,9 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class QuestionDetailListAdapter extends BaseAdapter {
     private final static int TYPE_QUESTION = 0;
@@ -31,7 +32,6 @@ public class QuestionDetailListAdapter extends BaseAdapter {
 
     private DatabaseReference mDatabaseReference;
     private DatabaseReference mFavouriteRef;
-
 
     public QuestionDetailListAdapter(Context context, Question question) {
         mLayoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -83,46 +83,48 @@ public class QuestionDetailListAdapter extends BaseAdapter {
             nameTextView.setText(name);
 
             //お気に入りボタンの追加
-            Button favouriteButton = (Button) convertView.findViewById(R.id.favouriteButton);
-            Button unFavouriteButton = (Button) convertView.findViewById(R.id.unFavouriteButton);
+            final Button favouriteButton = (Button) convertView.findViewById(R.id.favouriteButton);
+            final Button unFavouriteButton = (Button) convertView.findViewById(R.id.unFavouriteButton);
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
             String favourite = mQustion.getFavourite();
 
             mDatabaseReference = FirebaseDatabase.getInstance().getReference();
-            mFavouriteRef = mDatabaseReference.child(Const.ContentsPATH).child(String.valueOf(mQustion.getGenre())).child(mQustion.getQuestionUid()).child("favourite");
-            /*
-            mFavouriteRef.addChildEventListener(mEventListener);
-            */
+            mFavouriteRef = mDatabaseReference.child(Const.ContentsPATH).child(String.valueOf(mQustion.getGenre())).child(mQustion.getQuestionUid());
 
             //ログイン状態によるボタン表示の切り替え
             if (user == null) {
                 favouriteButton.setVisibility(View.INVISIBLE);
                 unFavouriteButton.setVisibility(View.INVISIBLE);
             } else if (favourite.equals("0")) {
-                favouriteButton.setVisibility(View.INVISIBLE);
+                favouriteButton.setVisibility(View.GONE);
                 unFavouriteButton.setVisibility(View.VISIBLE);
             } else {
-                unFavouriteButton.setVisibility(View.INVISIBLE);
+                favouriteButton.setVisibility(View.VISIBLE);
+                unFavouriteButton.setVisibility(View.GONE);
+
             }
 
             favouriteButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    Map<String, Object> favourite = new HashMap<>();
+                    favourite.put("favourite", "0");
+                    mFavouriteRef.updateChildren(favourite);
                     mQustion.setFavourite("0");
-                    String key = mQustion.getQuestionUid();
-                    String favourite = mQustion.getFavourite();
-                    Log.d("nakami", favourite);
-                    Log.d("nakami", key);
+                    favouriteButton.setVisibility(View.GONE);
+                    unFavouriteButton.setVisibility(View.VISIBLE);
                 }
             });
 
             unFavouriteButton.setOnClickListener((new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    mQustion.setFavourite("1");
-                    String favourite = mQustion.getFavourite();
-                    Log.d("nakami", favourite);
+                    Map<String, Object> favourite = new HashMap<>();
+                    favourite.put("favourite", "1");
+                    mFavouriteRef.updateChildren(favourite);
+                    favouriteButton.setVisibility(View.VISIBLE);
+                    unFavouriteButton.setVisibility(View.GONE);
                 }
             }));
 

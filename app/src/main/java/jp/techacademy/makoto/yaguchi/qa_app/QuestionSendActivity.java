@@ -153,6 +153,9 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
             String title = mTitleText.getText().toString();
             String body = mBodyText.getText().toString();
 
+            //お気に入り判定用の変数を追加
+            String favourite = "0";
+
             if (title.length() == 0) {
                 // 質問が入力されていない時はエラーを表示するだけ
                 Snackbar.make(v, "タイトルを入力して下さい", Snackbar.LENGTH_LONG).show();
@@ -172,6 +175,7 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
             data.put("title", title);
             data.put("body", body);
             data.put("name", name);
+            data.put("favourite", favourite);
 
             // 添付画像を取得する
             BitmapDrawable drawable = (BitmapDrawable) mImageView.getDrawable();
